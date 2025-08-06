@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Support Chatbot</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>AI Support Chatbot</h1>
+        </header>
+        
+        <nav class="tabs">
+            <button class="tab-button active" onclick="showTab('upload')">Upload PDFs</button>
+            <button class="tab-button" onclick="showTab('chat')">Chat & Query</button>
+        </nav>
+
+        <!-- Upload Tab -->
+        <div id="upload" class="tab-content active">
+            <div class="upload-section">
+                <h2>Upload PDF Documents</h2>
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-placeholder">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7,10 12,15 17,10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        <p>Click to select PDF files or drag and drop</p>
+                    </div>
+                </div>
+                <button id="selectFilesBtn" class="btn btn-primary">Select PDF Files</button>
+                <button id="uploadBtn" class="btn btn-success" disabled>Upload Selected Files</button>
+                
+                <div id="fileList" class="file-list"></div>
+                <div id="uploadStatus" class="status"></div>
+            </div>
+        </div>
+
+        <!-- Chat Tab -->
+        <div id="chat" class="tab-content">
+            <div class="chat-section">
+                <h2>Query Documents</h2>
+                
+                <div class="model-selection">
+                    <label for="modelSelect">AI Model:</label>
+                    <select id="modelSelect">
+                        <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                        <option value="gpt-4">GPT-4</option>
+                        <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                    </select>
+                </div>
+
+                <div class="chat-container">
+                    <div id="chatHistory" class="chat-history"></div>
+                    
+                    <div class="input-section">
+                        <div class="input-row">
+                            <textarea id="queryInput" placeholder="Type your question here..." rows="3"></textarea>
+                            <div class="input-controls">
+                                <button id="voiceBtn" class="btn btn-voice" title="Voice Input">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M12 1v11"></path>
+                                        <path d="M8 6v5a4 4 0 0 0 8 0V6"></path>
+                                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                        <line x1="12" y1="19" x2="12" y2="23"></line>
+                                        <line x1="8" y1="23" x2="16" y2="23"></line>
+                                    </svg>
+                                </button>
+                                <button id="sendBtn" class="btn btn-primary">Send</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html>

@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Support Chatbot - Web Version</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            min-height: 100vh;
+            box-shadow: 0 0 30px rgba(0,0,0,0.1);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        header h1 {
+            color: #2c3e50;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .tab-button {
+            padding: 15px 30px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .tab-button:hover {
+            background: #f8f9fa;
+            color: #333;
+        }
+
+        .tab-button.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            background: #f8f9fa;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .upload-section h2, .chat-section h2 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
+        .upload-area {
+            border: 3px dashed #ddd;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: #667eea;
+            background: #f8f9fa;
+        }
+
+        .upload-area.dragover {
+            border-color: #667eea;
+            background: #e8f2ff;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            margin: 5px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+
+        .file-list {
+            margin-top: 20px;
+        }
+
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+
+        .document-upload, .url-upload {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+
+        .database-management {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            background: #fff5f5;
+            border-color: #fed7d7;
+        }
+
+        .url-upload h3, .document-upload h3, .database-management h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+
+        .database-management h3 {
+            color: #e53e3e;
+        }
+
+        .url-input-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .url-input-group input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #5a6268;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: #c82333;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+        }
+
+        .status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.loading {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .model-selection {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .model-selection select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            font-size: 14px;
+            min-width: 120px;
+        }
+
+        .model-selection label {
+            font-weight: 500;
+            color: #555;
+            white-space: nowrap;
+        }
+
+        .model-selection input[type="checkbox"] {
+            margin-right: 5px;
+        }
+
+        .chat-container {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            height: 500px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-history {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            max-width: 80%;
+        }
+
+        .message.user {
+            background: #667eea;
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .message.assistant {
+            background: #e9ecef;
+            color: #333;
+        }
+
+        .message-header {
+            font-size: 12px;
+            opacity: 0.7;
+            margin-bottom: 5px;
+        }
+
+        .message-sources {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 6px;
+            border-left: 3px solid #667eea;
+        }
+
+        .message-sources h4 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            color: #667eea;
+        }
+
+        .message-sources ul {
+            margin: 0;
+            padding-left: 16px;
+        }
+
+        .message-sources li {
+            margin-bottom: 4px;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .message-sources .file-type {
+            font-size: 11px;
+            color: #666;
+            background: rgba(0, 0, 0, 0.1);
+            padding: 1px 4px;
+            border-radius: 3px;
+        }
+
+        .message-sources .page-info {
+            font-size: 0.9em;
+            color: #0066cc;
+            font-weight: bold;
+            margin: 0 3px;
+        }
+
+        .message-sources .para-info {
+            font-size: 0.8em;
+            color: #888;
+            margin: 0 3px;
+        }
+
+        .message-sources a {
+            color: #667eea;
+            text-decoration: none;
+            margin-left: 4px;
+        }
+
+        .message-sources a:hover {
+            text-decoration: underline;
+        }
+
+        .input-section {
+            margin-top: auto;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        #queryInput {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            resize: vertical;
+            font-family: inherit;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>AI Support Chatbot</h1>
+            <p><em>Web Version - No Installation Required</em></p>
+        </header>
+        
+        <nav class="tabs">
+            <button class="tab-button active" onclick="showTab('upload')">Upload Documents</button>
+            <button class="tab-button" onclick="showTab('chat')">Chat & Query</button>
+        </nav>
+
+        <!-- Upload Tab -->
+        <div id="upload" class="tab-content active">
+            <div class="upload-section">
+                <h2>Upload Documents</h2>
+                <div class="document-upload">
+                    <h3>Upload Files</h3>
+                    <p>Supported formats: PDF, DOC, DOCX, TXT, HTML</p>
+                    
+                    <div class="model-selection">
+                        <label for="embeddingModelSelect">Embedding Model:</label>
+                        <select id="embeddingModelSelect">
+                            <option value="text-embedding-3-small" selected>text-embedding-3-small</option>
+                            <option value="text-embedding-3-large">text-embedding-3-large</option>
+                            <option value="cohere-v3">Cohere V3</option>
+                        </select>
+                    </div>
+                    
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-placeholder">
+                            <p>📄 Click to select files or drag and drop</p>
+                            <p><small>PDF, DOC, DOCX, TXT, HTML files supported</small></p>
+                        </div>
+                    </div>
+                    <input type="file" id="fileInput" multiple accept=".pdf,.docx,.doc,.txt,.html,.htm" style="display: none;">
+                    <button id="selectFilesBtn" class="btn btn-primary">Select Files</button>
+                    <button id="uploadBtn" class="btn btn-success" disabled>Upload Selected Files</button>
+                </div>
+                
+                <div class="url-upload">
+                    <h3>Add Website/URL</h3>
+                    <p>Enter a URL to extract text content from a website</p>
+                    
+                    <div class="model-selection">
+                        <label for="urlEmbeddingModelSelect">Embedding Model:</label>
+                        <select id="urlEmbeddingModelSelect">
+                            <option value="text-embedding-3-small" selected>text-embedding-3-small</option>
+                            <option value="text-embedding-3-large">text-embedding-3-large</option>
+                            <option value="cohere-v3">Cohere V3</option>
+                        </select>
+                    </div>
+                    
+                    <div class="url-input-group">
+                        <input type="url" id="urlInput" placeholder="https://example.com" />
+                        <button id="urlUploadBtn" class="btn btn-secondary">Add URL</button>
+                    </div>
+                </div>
+                
+                <div class="database-management">
+                    <h3>Database Management</h3>
+                    <p>Clear all uploaded documents from the vector database and remove uploaded files</p>
+                    <button id="clearDbBtn" class="btn btn-danger">Clear All Data</button>
+                </div>
+                
+                <div id="fileList" class="file-list"></div>
+                <div id="uploadStatus" class="status"></div>
+            </div>
+        </div>
+
+        <!-- Chat Tab -->
+        <div id="chat" class="tab-content">
+            <div class="chat-section">
+                <h2>Query Documents</h2>
+                
+                <div class="model-selection">
+                    <label for="modelSelect">AI Model:</label>
+                    <select id="modelSelect">
+                        <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                        <option value="gpt-4">GPT-4</option>
+                        <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                    </select>
+                    
+                    <label for="chatEmbeddingModelSelect">Embedding Model:</label>
+                    <select id="chatEmbeddingModelSelect">
+                        <option value="text-embedding-3-small" selected>text-embedding-3-small</option>
+                        <option value="text-embedding-3-large">text-embedding-3-large</option>
+                        <option value="cohere-v3">Cohere V3</option>
+                    </select>
+                </div>
+                
+                <div class="model-selection">
+                    <label for="chunkCountSelect">Chunks to Retrieve:</label>
+                    <select id="chunkCountSelect">
+                        <option value="3" selected>3</option>
+                        <option value="5">5</option>
+                        <option value="7">7</option>
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="30">30</option>
+                    </select>
+                    
+                    <label for="rerankerSelect">Re-ranking Model:</label>
+                    <select id="rerankerSelect">
+                        <option value="none" selected>None</option>
+                        <option value="cohere">Cohere Rerank</option>
+                        <option value="llm">LLM-based</option>
+                    </select>
+                    
+                    <label for="compressionCheckbox">
+                        <input type="checkbox" id="compressionCheckbox" checked> Context Compression
+                    </label>
+                </div>
+
+                <div class="chat-container">
+                    <div id="chatHistory" class="chat-history">
+                        <div class="message assistant">
+                            <div class="message-header">AI Assistant</div>
+                            <div class="message-content">Welcome! Upload some PDF documents first, then ask me questions about their content.</div>
+                        </div>
+                    </div>
+                    
+                    <div class="input-section">
+                        <div class="input-row">
+                            <textarea id="queryInput" placeholder="Type your question here..." rows="3"></textarea>
+                            <button id="sendBtn" class="btn btn-primary">Send</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let selectedFiles = [];
+        const API_BASE = 'http://localhost:8000';
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeEventListeners();
+        });
+
+        // Event listeners
+        function initializeEventListeners() {
+            // File selection
+            document.getElementById('selectFilesBtn').addEventListener('click', () => {
+                document.getElementById('fileInput').click();
+            });
+            
+            document.getElementById('fileInput').addEventListener('change', handleFileSelection);
+            document.getElementById('uploadBtn').addEventListener('click', uploadFiles);
+
+            // URL upload
+            document.getElementById('urlUploadBtn').addEventListener('click', uploadUrl);
+            
+            // Clear database
+            document.getElementById('clearDbBtn').addEventListener('click', clearDatabase);
+            
+            // Enter key in URL input
+            document.getElementById('urlInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    uploadUrl();
+                }
+            });
+
+            // Chat functionality
+            document.getElementById('sendBtn').addEventListener('click', sendMessage);
+            
+            // Enter key in textarea
+            document.getElementById('queryInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            // Drag and drop
+            const uploadArea = document.getElementById('uploadArea');
+            uploadArea.addEventListener('dragover', handleDragOver);
+            uploadArea.addEventListener('dragleave', handleDragLeave);
+            uploadArea.addEventListener('drop', handleDrop);
+            uploadArea.addEventListener('click', () => {
+                document.getElementById('fileInput').click();
+            });
+        }
+
+        // Tab switching
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            document.querySelector(`[onclick="showTab('${tabName}')"]`).classList.add('active');
+        }
+
+        // File handling
+        function handleFileSelection(event) {
+            console.log('=== FRONTEND DEBUG: handleFileSelection called ===');
+            console.log('Event target files:', event.target.files);
+            
+            const supportedExtensions = ['.pdf', '.docx', '.doc', '.txt', '.html', '.htm'];
+            const supportedMimeTypes = [
+                'application/pdf',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+                'application/msword', // .doc
+                'text/plain', // .txt
+                'text/html' // .html
+            ];
+            
+            const files = Array.from(event.target.files).filter(file => {
+                const extension = '.' + file.name.toLowerCase().split('.').pop();
+                console.log(`Checking file: ${file.name}, extension: ${extension}, type: ${file.type}`);
+                const isSupported = supportedExtensions.includes(extension) || supportedMimeTypes.includes(file.type);
+                console.log(`File supported: ${isSupported}`);
+                return isSupported;
+            });
+            
+            console.log('Filtered files:', files);
+            selectedFiles = files;
+            updateFileList();
+        }
+
+        function updateFileList() {
+            console.log('=== FRONTEND DEBUG: updateFileList called ===');
+            console.log('selectedFiles array:', selectedFiles);
+            console.log('selectedFiles length:', selectedFiles.length);
+            
+            const fileListElement = document.getElementById('fileList');
+            const uploadBtn = document.getElementById('uploadBtn');
+
+            if (selectedFiles.length === 0) {
+                console.log('No files selected, clearing list and disabling button');
+                fileListElement.innerHTML = '';
+                uploadBtn.disabled = true;
+                return;
+            }
+
+            console.log('Updating file list display');
+            fileListElement.innerHTML = `
+                <h3>Selected Files (${selectedFiles.length}):</h3>
+                ${selectedFiles.map(file => `
+                    <div class="file-item">
+                        <span class="file-name">${file.name}</span>
+                        <span class="file-size">${formatFileSize(file.size)}</span>
+                    </div>
+                `).join('')}
+            `;
+
+            uploadBtn.disabled = false;
+            console.log('Upload button enabled');
+        }
+
+        async function uploadFiles() {
+            console.log('=== FRONTEND DEBUG: uploadFiles called ===');
+            console.log('Selected files:', selectedFiles);
+            
+            if (selectedFiles.length === 0) {
+                console.log('No files selected, returning');
+                return;
+            }
+
+            const uploadBtn = document.getElementById('uploadBtn');
+            const embeddingModelSelect = document.getElementById('embeddingModelSelect');
+            console.log('Embedding model:', embeddingModelSelect.value);
+            
+            uploadBtn.disabled = true;
+            showStatus('Uploading files...', 'loading');
+
+            try {
+                const formData = new FormData();
+                selectedFiles.forEach((file, index) => {
+                    console.log(`Adding file ${index + 1}:`, file.name, file.size);
+                    formData.append('files', file);
+                });
+                formData.append('embedding_model', embeddingModelSelect.value);
+
+                console.log('Sending request to:', `${API_BASE}/upload/`);
+                const response = await fetch(`${API_BASE}/upload/`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                console.log('Response status:', response.status);
+                console.log('Response ok:', response.ok);
+
+                const data = await response.json();
+                console.log('Response data:', data);
+
+                if (data.status === 'completed') {
+                    const successCount = data.files_processed;
+                    const totalFiles = data.results.length;
+                    
+                    let statusMessage = `Processed ${successCount} of ${totalFiles} files successfully.`;
+                    if (data.total_chunks > 0) {
+                        statusMessage += ` Total chunks: ${data.total_chunks}`;
+                    }
+                    
+                    // Show detailed results
+                    const errorFiles = data.results.filter(r => r.status === 'error');
+                    if (errorFiles.length > 0) {
+                        statusMessage += `\n\nErrors: ${errorFiles.map(f => `${f.filename}: ${f.message}`).join(', ')}`;
+                    }
+                    
+                    showStatus(statusMessage, successCount > 0 ? 'success' : 'error');
+                    selectedFiles = [];
+                    updateFileList();
+                    document.getElementById('fileInput').value = '';
+                } else {
+                    throw new Error(data.message || 'Upload failed');
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                showStatus('Upload failed: ' + error.message, 'error');
+            } finally {
+                uploadBtn.disabled = false;
+                console.log('=== FRONTEND DEBUG: uploadFiles completed ===');
+            }
+        }
+
+        async function uploadUrl() {
+            const urlInput = document.getElementById('urlInput');
+            const urlEmbeddingModelSelect = document.getElementById('urlEmbeddingModelSelect');
+            const url = urlInput.value.trim();
+
+            if (!url) {
+                showStatus('Please enter a valid URL', 'error');
+                return;
+            }
+
+            const urlUploadBtn = document.getElementById('urlUploadBtn');
+            urlUploadBtn.disabled = true;
+            showStatus('Processing URL...', 'loading');
+
+            try {
+                const response = await fetch(`${API_BASE}/upload-url/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        url: url,
+                        embedding_model: urlEmbeddingModelSelect.value
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    showStatus(
+                        `Successfully processed URL. Chunks added: ${data.chunks_added}`,
+                        'success'
+                    );
+                    urlInput.value = '';
+                } else {
+                    throw new Error(data.message || 'URL processing failed');
+                }
+            } catch (error) {
+                showStatus('URL processing failed: ' + error.message, 'error');
+            } finally {
+                urlUploadBtn.disabled = false;
+            }
+        }
+
+        async function clearDatabase() {
+            if (!confirm('Are you sure you want to clear all documents and uploaded files? This action cannot be undone.')) {
+                return;
+            }
+
+            const clearDbBtn = document.getElementById('clearDbBtn');
+            clearDbBtn.disabled = true;
+            showStatus('Clearing all data...', 'loading');
+
+            try {
+                const response = await fetch(`${API_BASE}/clear-database/`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    showStatus(data.message, 'success');
+                    
+                    // Clear the file list display as well
+                    const fileList = document.getElementById('fileList');
+                    if (fileList) {
+                        fileList.innerHTML = '';
+                    }
+                    
+                    // Reset selected files
+                    selectedFiles = [];
+                    updateFileList();
+                } else {
+                    throw new Error(data.message || 'Failed to clear data');
+                }
+            } catch (error) {
+                showStatus('Failed to clear data: ' + error.message, 'error');
+            } finally {
+                clearDbBtn.disabled = false;
+            }
+        }
+
+        // Drag and drop handlers
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('dragover');
+        }
+
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('dragover');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('dragover');
+            
+            const supportedExtensions = ['.pdf', '.docx', '.doc', '.txt', '.html', '.htm'];
+            const supportedMimeTypes = [
+                'application/pdf',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+                'application/msword', // .doc
+                'text/plain', // .txt
+                'text/html' // .html
+            ];
+            
+            const files = Array.from(e.dataTransfer.files).filter(file => {
+                const extension = '.' + file.name.toLowerCase().split('.').pop();
+                return supportedExtensions.includes(extension) || supportedMimeTypes.includes(file.type);
+            });
+            
+            if (files.length > 0) {
+                selectedFiles = files;
+                updateFileList();
+            } else {
+                showStatus('Please select supported file types: PDF, DOC, DOCX, TXT, HTML', 'error');
+            }
+        }
+
+        // Chat functionality
+        async function sendMessage() {
+            const queryInput = document.getElementById('queryInput');
+            const modelSelect = document.getElementById('modelSelect');
+            const chatEmbeddingModelSelect = document.getElementById('chatEmbeddingModelSelect');
+            const chunkCountSelect = document.getElementById('chunkCountSelect');
+            const rerankerSelect = document.getElementById('rerankerSelect');
+            const compressionCheckbox = document.getElementById('compressionCheckbox');
+            const query = queryInput.value.trim();
+
+            if (!query) return;
+
+            // Add user message to chat
+            addMessageToChat('user', query);
+            queryInput.value = '';
+
+            try {
+                // Send request to backend
+                const formData = new FormData();
+                formData.append('query', query);
+                formData.append('model', modelSelect.value);
+                formData.append('embedding_model', chatEmbeddingModelSelect.value);
+                formData.append('chunk_count', chunkCountSelect.value);
+                formData.append('reranker_type', rerankerSelect.value);
+                formData.append('use_compression', compressionCheckbox.checked);
+
+                const response = await fetch(`${API_BASE}/chat/`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                // Add assistant response to chat
+                addMessageToChat('assistant', data.answer, data.model_used, data.embedding_model_used, data);
+            } catch (error) {
+                addMessageToChat('assistant', 'Sorry, I encountered an error: ' + error.message);
+            }
+        }
+
+        // Add message to chat history
+        function addMessageToChat(sender, message, model = null, embeddingModel = null, metadata = null) {
+            const chatHistory = document.getElementById('chatHistory');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+
+            const timestamp = new Date().toLocaleTimeString();
+            let modelInfo = '';
+            if (model) {
+                modelInfo = ` (${model}`;
+                if (embeddingModel) {
+                    modelInfo += ` | ${embeddingModel}`;
+                }
+                if (metadata) {
+                    if (metadata.chunk_count) {
+                        modelInfo += ` | ${metadata.chunks_used || metadata.chunk_count} chunks`;
+                    }
+                    if (metadata.reranker_type && metadata.reranker_type !== 'none') {
+                        modelInfo += ` | ${metadata.reranker_type} rerank`;
+                    }
+                    if (metadata.compression_used) {
+                        modelInfo += ` | compressed`;
+                    }
+                    if (metadata.language_detected) {
+                        modelInfo += ` | ${metadata.language_detected === 'vietnamese' ? '🇻🇳 Vietnamese' : '🇺🇸 English'}`;
+                    }
+                }
+                modelInfo += ')';
+            }
+
+            // Build sources section for assistant messages
+            let sourcesHtml = '';
+            if (sender === 'assistant' && metadata && metadata.sources && metadata.sources.length > 0) {
+                sourcesHtml = '<div class="message-sources">';
+                sourcesHtml += '<h4>📚 Sources:</h4>';
+                sourcesHtml += '<ul>';
+                
+                metadata.sources.forEach((source, index) => {
+                    let sourceText = `${index + 1}. `;
+                    
+                    // Add file name with download link if it's a file (not URL)
+                    if (source.file_name && source.file_name !== 'Unknown') {
+                        if (source.url) {
+                            // It's a web URL, make it clickable
+                            sourceText += `<a href="${source.url}" target="_blank" rel="noopener"><strong>${source.file_name}</strong></a>`;
+                        } else {
+                            // It's a file, add download link
+                            sourceText += `<strong>${source.file_name}</strong> <a href="http://localhost:8000/download/${encodeURIComponent(source.file_name)}" target="_blank" title="Download file">📥</a>`;
+                        }
+                    }
+                    
+                    // Add title if available and different from file name
+                    if (source.title && source.title !== source.file_name) {
+                        sourceText += ` - "${source.title}"`;
+                    }
+                    
+                    // Add page number with better formatting
+                    if (source.page_number) {
+                        if (source.file_type && source.file_type.toLowerCase() === 'docx') {
+                            sourceText += ` <span class="page-info">(Est. Page ${source.page_number})</span>`;
+                        } else {
+                            sourceText += ` <span class="page-info">(Page ${source.page_number})</span>`;
+                        }
+                    }
+                    
+                    // Add paragraph number for DOCX files if available
+                    if (source.paragraph_number) {
+                        sourceText += ` <span class="para-info">(Para ${source.paragraph_number})</span>`;
+                    }
+                    
+                    // Add file type info
+                    if (source.file_type && source.file_type !== 'unknown') {
+                        sourceText += ` <span class="file-type">[${source.file_type.toUpperCase()}]</span>`;
+                    }
+                    
+                    sourcesHtml += `<li>${sourceText}</li>`;
+                });
+                
+                sourcesHtml += '</ul></div>';
+            }
+
+            messageDiv.innerHTML = `
+                <div class="message-header">${sender === 'user' ? 'You' : 'AI Assistant'}${modelInfo} - ${timestamp}</div>
+                <div class="message-content">${message}</div>
+                ${sourcesHtml}
+            `;
+
+            chatHistory.appendChild(messageDiv);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        // Utility functions
+        function showStatus(message, type) {
+            const statusElement = document.getElementById('uploadStatus');
+            statusElement.innerHTML = message;
+            statusElement.className = `status ${type}`;
+            
+            // Auto-hide success messages after 5 seconds
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusElement.innerHTML = '';
+                    statusElement.className = 'status';
+                }, 5000);
+            }
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+    </script>
+</body>
+</html>
