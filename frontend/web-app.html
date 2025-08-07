@@ -381,6 +381,141 @@
             align-items: flex-end;
         }
 
+        .voice-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .btn-voice {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            min-width: 45px;
+        }
+
+        .btn-voice:hover {
+            background: #218838;
+        }
+
+        .btn-voice.recording {
+            background: #dc3545;
+            animation: pulse 1s infinite;
+        }
+
+        .btn-speak {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            min-width: 35px;
+            margin-left: 8px;
+        }
+
+        .btn-speak:hover:not(:disabled) {
+            background: #138496;
+        }
+
+        .btn-speak:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .btn-speak.speaking {
+            background: #ffc107;
+            color: #212529;
+            animation: pulse 1s infinite;
+        }
+
+        .message-speak-btn {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 8px;
+            display: inline-block;
+        }
+
+        .message-speak-btn:hover:not(:disabled) {
+            background: #138496;
+        }
+
+        .message-speak-btn.speaking {
+            background: #ffc107;
+            color: #212529;
+            animation: pulse 1s infinite;
+        }
+
+        .message-stop-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 4px;
+            display: inline-block;
+        }
+
+        .message-stop-btn:hover {
+            background: #c82333;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .voice-status {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+            min-height: 16px;
+        }
+
+        .voice-status.listening {
+            color: #28a745;
+        }
+
+        .voice-status.error {
+            color: #dc3545;
+        }
+
+        .voice-language-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 8px;
+            font-size: 14px;
+        }
+
+        .voice-language-controls label {
+            font-weight: 500;
+            color: #555;
+            white-space: nowrap;
+        }
+
+        .voice-language-controls select {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            font-size: 14px;
+            min-width: 120px;
+        }
+
         #queryInput {
             flex: 1;
             padding: 12px;
@@ -400,8 +535,8 @@
         </header>
         
         <nav class="tabs">
-            <button class="tab-button active" onclick="showTab('upload')">Upload Documents</button>
-            <button class="tab-button" onclick="showTab('chat')">Chat & Query</button>
+            <button class="tab-button active" onclick="showTab('chat')">Chat & Query</button>
+            <button class="tab-button" onclick="showTab('upload')">Upload Documents</button>
         </nav>
 
         <!-- Upload Tab -->
@@ -510,15 +645,28 @@
                     <div id="chatHistory" class="chat-history">
                         <div class="message assistant">
                             <div class="message-header">AI Assistant</div>
-                            <div class="message-content">Welcome! Upload some PDF documents first, then ask me questions about their content.</div>
+                            <div class="message-content">Welcome! Upload some documents (PDF, DOC, DOCX, TXT, HTML files supported) first, then ask me questions about their content.</div>
                         </div>
                     </div>
                     
                     <div class="input-section">
                         <div class="input-row">
                             <textarea id="queryInput" placeholder="Type your question here..." rows="3"></textarea>
+                            <div class="voice-controls">
+                                <button id="voiceBtn" class="btn btn-voice" title="Voice Input">🎤</button>
+                            </div>
                             <button id="sendBtn" class="btn btn-primary">Send</button>
                         </div>
+                        <div class="voice-language-controls">
+                            <label for="voiceLanguageSelect">Voice Language:</label>
+                            <select id="voiceLanguageSelect">
+                                <option value="en-US" selected>English</option>
+                                <option value="vi-VN">Tiếng Việt</option>
+                                <option value="fr-FR">French</option>
+                                <option value="es-ES">Spanish</option>
+                            </select>
+                        </div>
+                        <div id="voiceStatus" class="voice-status"></div>
                     </div>
                 </div>
             </div>
@@ -529,10 +677,18 @@
         // Global variables
         let selectedFiles = [];
         const API_BASE = 'http://localhost:8000';
+        
+        // Voice functionality variables
+        let recognition = null;
+        let isListening = false;
+        let speechSynthesis = window.speechSynthesis;
+        let currentUtterance = null;
+        let currentSpeakingButton = null;
 
         // Initialize the app
         document.addEventListener('DOMContentLoaded', function() {
             initializeEventListeners();
+            initializeVoice();
         });
 
         // Event listeners
@@ -561,6 +717,9 @@
 
             // Chat functionality
             document.getElementById('sendBtn').addEventListener('click', sendMessage);
+            
+            // Voice functionality
+            document.getElementById('voiceBtn').addEventListener('click', toggleVoiceInput);
             
             // Enter key in textarea
             document.getElementById('queryInput').addEventListener('keypress', (e) => {
@@ -958,14 +1117,432 @@
                 sourcesHtml += '</ul></div>';
             }
 
+            // Add speak button for assistant messages
+            let speakButtonHtml = '';
+            if (sender === 'assistant') {
+                const messageId = 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                speakButtonHtml = `
+                    <button class="message-speak-btn" onclick="speakMessage('${messageId}')" title="Listen to this answer">🔊</button>
+                    <button class="message-stop-btn" onclick="stopSpeaking('${messageId}')" title="Stop speaking" style="display: none;">⏹️</button>
+                `;
+                messageDiv.dataset.messageId = messageId;
+                messageDiv.dataset.messageText = message;
+            }
+
             messageDiv.innerHTML = `
-                <div class="message-header">${sender === 'user' ? 'You' : 'AI Assistant'}${modelInfo} - ${timestamp}</div>
+                <div class="message-header">${sender === 'user' ? 'You' : 'AI Assistant'}${modelInfo} - ${timestamp}${speakButtonHtml}</div>
                 <div class="message-content">${message}</div>
                 ${sourcesHtml}
             `;
 
             chatHistory.appendChild(messageDiv);
             chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        // Voice functionality
+        function initializeVoice() {
+            // Check for Web Speech API support
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                console.warn('Speech recognition not supported');
+                document.getElementById('voiceBtn').disabled = true;
+                return;
+            }
+
+            // Initialize speech recognition
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            
+            recognition.continuous = false;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US'; // Default to English, will be updated from dropdown
+
+            recognition.onstart = function() {
+                isListening = true;
+                const voiceBtn = document.getElementById('voiceBtn');
+                const voiceStatus = document.getElementById('voiceStatus');
+                
+                voiceBtn.classList.add('recording');
+                voiceStatus.textContent = 'Listening... Speak now';
+                voiceStatus.className = 'voice-status listening';
+            };
+
+            recognition.onresult = function(event) {
+                const voiceStatus = document.getElementById('voiceStatus');
+                let interimTranscript = '';
+                let finalTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript;
+                    } else {
+                        interimTranscript += transcript;
+                    }
+                }
+
+                // Show interim results
+                if (interimTranscript) {
+                    voiceStatus.textContent = `Hearing: "${interimTranscript}" (${getLanguageName(recognition.lang)})`;
+                }
+
+                // Use final transcript
+                if (finalTranscript) {
+                    const queryInput = document.getElementById('queryInput');
+                    const cleanedTranscript = finalTranscript.trim();
+                    
+                    console.log('Final transcript received:', cleanedTranscript);
+                    console.log('Recognition language used:', recognition.lang);
+                    
+                    // Check if user said "SEND" to automatically send the message
+                    let lowerTranscript = cleanedTranscript.toLowerCase();
+                    //Remove auto "." at the end
+                    if (lowerTranscript.endsWith('.')) {
+                        lowerTranscript = lowerTranscript.slice(0, -1); // Removes the last character
+                    }
+                    
+                    // Multi-language voice command detection
+                    const isSendCommand = 
+                        // English
+                        lowerTranscript === 'send' || 
+                        lowerTranscript === 'send it' ||
+                        // Vietnamese
+                        lowerTranscript === 'gửi' ||
+                        lowerTranscript === 'gửi đi' ||
+                        lowerTranscript === 'gui di' ||  // Without tones
+                        lowerTranscript === 'gui' ||     // Simplified
+                        lowerTranscript.includes('gửi') ||
+                        lowerTranscript.includes('gui') ||
+                        // French
+                        lowerTranscript === 'envoyer' ||
+                        lowerTranscript === 'envoi' ||
+                        // Spanish
+                        lowerTranscript === 'enviar' ||
+                        lowerTranscript === 'envía';
+                    
+                    if (isSendCommand) {
+                        console.log('Voice command detected:', cleanedTranscript, 'Language:', recognition.lang);
+                        voiceStatus.textContent = `Voice command: Sending message...`;
+                        voiceStatus.className = 'voice-status listening';
+                        
+                        // Auto-send the current message if there's text
+                        const currentText = queryInput.value.trim();
+                        console.log('Current text in input:', currentText);
+                        if (currentText) {
+                            setTimeout(() => {
+                                console.log('Executing sendMessage()');
+                                sendMessage();
+                            }, 500);
+                        } else {
+                            voiceStatus.textContent = `No message to send`;
+                            voiceStatus.className = 'voice-status error';
+                            console.log('No text to send');
+                        }
+                    } else {
+                        // Only add text if it's not a voice command
+                        console.log('Adding text to input:', cleanedTranscript);
+                        queryInput.value = cleanedTranscript;
+                        voiceStatus.textContent = `Captured: "${cleanedTranscript}" (${getLanguageName(recognition.lang)})`;
+                        voiceStatus.className = 'voice-status';
+                    }
+                }
+            };
+
+            recognition.onerror = function(event) {
+                console.error('Speech recognition error:', event.error);
+                const voiceStatus = document.getElementById('voiceStatus');
+                voiceStatus.textContent = `Error: ${event.error}`;
+                voiceStatus.className = 'voice-status error';
+                stopListening();
+            };
+
+            recognition.onend = function() {
+                stopListening();
+            };
+
+            // Check for speech synthesis support
+            if (!speechSynthesis) {
+                console.warn('Speech synthesis not supported');
+                document.getElementById('speakBtn').disabled = true;
+            }
+        }
+
+        function toggleVoiceInput() {
+            if (isListening) {
+                stopListening();
+            } else {
+                startListening();
+            }
+        }
+
+        function startListening() {
+            if (recognition && !isListening) {
+                // Get the selected language from the dropdown
+                const languageSelect = document.getElementById('voiceLanguageSelect');
+                const selectedLanguage = languageSelect.value;
+                
+                recognition.lang = selectedLanguage;
+                console.log('Starting recognition with language:', recognition.lang);
+                recognition.start();
+            }
+        }
+
+        function stopListening() {
+            if (recognition && isListening) {
+                recognition.stop();
+            }
+            
+            isListening = false;
+            const voiceBtn = document.getElementById('voiceBtn');
+            voiceBtn.classList.remove('recording');
+            
+            // Clear status after a delay
+            setTimeout(() => {
+                const voiceStatus = document.getElementById('voiceStatus');
+                if (!voiceStatus.textContent.startsWith('Captured:')) {
+                    voiceStatus.textContent = '';
+                    voiceStatus.className = 'voice-status';
+                }
+            }, 3000);
+        }
+
+        function speakLastAnswer() {
+            if (!lastAssistantMessage) {
+                console.warn('No assistant message to speak');
+                return;
+            }
+
+            // Stop any current speech
+            if (currentUtterance) {
+                speechSynthesis.cancel();
+            }
+
+            // Clean the text for speech (remove markdown, HTML, etc.)
+            const cleanText = cleanTextForSpeech(lastAssistantMessage);
+            
+            // Create new utterance
+            currentUtterance = new SpeechSynthesisUtterance(cleanText);
+            
+            // Detect language for appropriate voice
+            if (containsVietnamese(cleanText)) {
+                // Try to find Vietnamese voice
+                const voices = speechSynthesis.getVoices();
+                const vietnameseVoice = voices.find(voice => 
+                    voice.lang.startsWith('vi') || voice.name.toLowerCase().includes('vietnamese')
+                );
+                if (vietnameseVoice) {
+                    currentUtterance.voice = vietnameseVoice;
+                }
+                currentUtterance.lang = 'vi-VN';
+            } else {
+                currentUtterance.lang = 'en-US';
+            }
+
+            // Configure speech settings
+            currentUtterance.rate = 0.9;
+            currentUtterance.pitch = 1;
+            currentUtterance.volume = 1;
+
+            // Visual feedback
+            const speakBtn = document.getElementById('speakBtn');
+            const voiceStatus = document.getElementById('voiceStatus');
+            
+            speakBtn.classList.add('speaking');
+            voiceStatus.textContent = 'Speaking...';
+            voiceStatus.className = 'voice-status listening';
+
+            currentUtterance.onend = function() {
+                speakBtn.classList.remove('speaking');
+                voiceStatus.textContent = '';
+                voiceStatus.className = 'voice-status';
+                currentUtterance = null;
+            };
+
+            currentUtterance.onerror = function(event) {
+                console.error('Speech synthesis error:', event.error);
+                speakBtn.classList.remove('speaking');
+                voiceStatus.textContent = `Speech error: ${event.error}`;
+                voiceStatus.className = 'voice-status error';
+                currentUtterance = null;
+            };
+
+            // Start speaking
+            speechSynthesis.speak(currentUtterance);
+        }
+
+        function speakMessage(messageId) {
+            // Find the message element
+            const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+            if (!messageElement) {
+                console.warn('Message not found:', messageId);
+                return;
+            }
+
+            const messageText = messageElement.dataset.messageText;
+            if (!messageText) {
+                console.warn('No message text found');
+                return;
+            }
+
+            // Stop any current speech
+            if (currentUtterance) {
+                speechSynthesis.cancel();
+                if (currentSpeakingButton) {
+                    currentSpeakingButton.classList.remove('speaking');
+                    // Hide stop button and show speak button for previous message
+                    const prevMessageElement = currentSpeakingButton.closest('.message');
+                    if (prevMessageElement) {
+                        const prevSpeakBtn = prevMessageElement.querySelector('.message-speak-btn');
+                        const prevStopBtn = prevMessageElement.querySelector('.message-stop-btn');
+                        if (prevSpeakBtn) prevSpeakBtn.style.display = 'inline-block';
+                        if (prevStopBtn) prevStopBtn.style.display = 'none';
+                    }
+                }
+            }
+
+            // Find the speak and stop buttons for this message
+            const speakBtn = messageElement.querySelector('.message-speak-btn');
+            const stopBtn = messageElement.querySelector('.message-stop-btn');
+            currentSpeakingButton = speakBtn;
+
+            // Clean the text for speech (remove markdown, HTML, etc.)
+            const cleanText = cleanTextForSpeech(messageText);
+            
+            // Create new utterance
+            currentUtterance = new SpeechSynthesisUtterance(cleanText);
+            
+            // Detect language for appropriate voice
+            const detectedLang = detectTextLanguage(cleanText);
+            currentUtterance.lang = detectedLang;
+            
+            // Try to find appropriate voice
+            const voices = speechSynthesis.getVoices();
+            let preferredVoice = null;
+            
+            if (detectedLang === 'vi-VN') {
+                preferredVoice = voices.find(voice => 
+                    voice.lang.startsWith('vi') || voice.name.toLowerCase().includes('vietnamese')
+                );
+            } else if (detectedLang === 'fr-FR') {
+                preferredVoice = voices.find(voice => 
+                    voice.lang.startsWith('fr') || voice.name.toLowerCase().includes('french')
+                );
+            } else if (detectedLang === 'es-ES') {
+                preferredVoice = voices.find(voice => 
+                    voice.lang.startsWith('es') || voice.name.toLowerCase().includes('spanish')
+                );
+            }
+            
+            if (preferredVoice) {
+                currentUtterance.voice = preferredVoice;
+            }
+
+            // Configure speech settings
+            currentUtterance.rate = 0.9;
+            currentUtterance.pitch = 1;
+            currentUtterance.volume = 1;
+
+            // Visual feedback - show stop button, hide speak button
+            speakBtn.classList.add('speaking');
+            speakBtn.style.display = 'none';
+            stopBtn.style.display = 'inline-block';
+
+            currentUtterance.onend = function() {
+                speakBtn.classList.remove('speaking');
+                speakBtn.style.display = 'inline-block';
+                stopBtn.style.display = 'none';
+                currentUtterance = null;
+                currentSpeakingButton = null;
+            };
+
+            currentUtterance.onerror = function(event) {
+                console.error('Speech synthesis error:', event.error);
+                speakBtn.classList.remove('speaking');
+                speakBtn.style.display = 'inline-block';
+                stopBtn.style.display = 'none';
+                currentUtterance = null;
+                currentSpeakingButton = null;
+            };
+
+            // Start speaking
+            speechSynthesis.speak(currentUtterance);
+        }
+
+        function stopSpeaking(messageId) {
+            // Stop current speech
+            if (currentUtterance) {
+                speechSynthesis.cancel();
+            }
+
+            // Find the message element and reset button states
+            const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+            if (messageElement) {
+                const speakBtn = messageElement.querySelector('.message-speak-btn');
+                const stopBtn = messageElement.querySelector('.message-stop-btn');
+                
+                if (speakBtn) {
+                    speakBtn.classList.remove('speaking');
+                    speakBtn.style.display = 'inline-block';
+                }
+                if (stopBtn) {
+                    stopBtn.style.display = 'none';
+                }
+            }
+
+            // Reset global variables
+            currentUtterance = null;
+            currentSpeakingButton = null;
+        }
+
+        function containsVietnamese(text) {
+            // Check for Vietnamese characters
+            const vietnamesePattern = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i;
+            return vietnamesePattern.test(text);
+        }
+
+        function getLanguageName(langCode) {
+            const languageNames = {
+                'en-US': 'English',
+                'vi-VN': 'Tiếng Việt',
+                'fr-FR': 'French',
+                'es-ES': 'Spanish'
+            };
+            return languageNames[langCode] || langCode;
+        }
+
+        function detectTextLanguage(text) {
+            // Simple language detection based on character patterns
+            if (containsVietnamese(text)) {
+                return 'vi-VN';
+            }
+            
+            // French patterns
+            if (/[àâäéèêëïîôöùûüÿç]/i.test(text) || /\b(le|la|les|du|de|des|et|est|dans|pour|avec|sur|par)\b/i.test(text)) {
+                return 'fr-FR';
+            }
+            
+            // Spanish patterns  
+            if (/[ñáéíóúü]/i.test(text) || /\b(el|la|los|las|y|es|en|para|con|por|de|del)\b/i.test(text)) {
+                return 'es-ES';
+            }
+            
+            // Default to English
+            return 'en-US';
+        }
+
+        function cleanTextForSpeech(text) {
+            // Remove markdown formatting
+            let cleaned = text
+                .replace(/\*\*(.*?)\*\*/g, '$1') // Bold
+                .replace(/\*(.*?)\*/g, '$1')     // Italic
+                .replace(/`(.*?)`/g, '$1')       // Code
+                .replace(/#{1,6}\s*(.*)/g, '$1') // Headers
+                .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1') // Links
+                .replace(/<[^>]*>/g, '')         // HTML tags
+                .replace(/\n+/g, '. ')           // Line breaks to periods
+                .replace(/\s+/g, ' ')            // Multiple spaces to single
+                .trim();
+            
+            return cleaned;
         }
 
         // Utility functions
