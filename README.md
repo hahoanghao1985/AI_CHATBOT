@@ -1,10 +1,25 @@
 # AI Support Chatbot
 
-An advanced AI-powered support chatbot with enhanced RAG capabilities, featuring a FastAPI backend and a modern web frontend with comprehensive document source references.
+An advanced AI-powered support chatbot with enhanced RAG capabilities, featuring voice interaction, multi-language support, and comprehensive document processing. Built with FastAPI backend and a modern web frontend with real-time voice controls.
 
 ## Features
 
-### Web Interface
+### 🎤 Voice & Multi-Language Support
+- **Voice Recognition**: Hands-free document queries with Web Speech API
+  - Language selector dropdown (English, Tiếng Việt, French, Spanish)
+  - Real-time voice status feedback
+  - Voice commands for sending messages ("send", "gửi đi", "envoyer", "enviar")
+- **Text-to-Speech**: Listen to AI responses with natural voices
+  - Individual speaker controls for each AI message
+  - Stop/pause functionality during playback
+  - Automatic language detection for appropriate voice selection
+  - Support for Vietnamese, English, French, and Spanish voices
+- **Multi-Language Interface**: Seamless support for multiple languages
+  - Language-specific voice command recognition
+  - Smart text language detection for speech synthesis
+  - Consistent experience across all supported languages
+
+### 🌐 Web Interface
 - **Upload Tab**: Multiple document upload with drag-and-drop support
   - Support for PDF, DOCX, DOC, TXT, HTML files and URLs
   - Embedding model selection (OpenAI text-embedding-3-small/large, Cohere V3)
@@ -15,8 +30,9 @@ An advanced AI-powered support chatbot with enhanced RAG capabilities, featuring
   - Re-ranking models (Cohere Rerank, LLM-based, None)
   - Context compression for large documents
   - **Source References**: Detailed citations showing document titles, page numbers, and file paths
+  - **Voice Controls**: Integrated voice input and audio playback
 
-### Enhanced Backend (FastAPI)
+### 🚀 Enhanced Backend (FastAPI)
 - Advanced RAG pipeline with configurable parameters
 - Multiple embedding model support (OpenAI, Cohere)
 - Document processing with metadata extraction for source attribution
@@ -24,6 +40,7 @@ An advanced AI-powered support chatbot with enhanced RAG capabilities, featuring
 - Context compression for optimal performance
 - ChromaDB vector storage with rich metadata
 - Support for multiple file formats and web URLs
+- Static file serving for the web interface with voice capabilities
 
 ## Structure
 ```
@@ -89,12 +106,19 @@ The web interface is served directly by the FastAPI backend at `http://localhost
      - Number of chunks to retrieve (3-30)
      - Re-ranking method (None, Cohere, LLM-based)
      - Context compression toggle
+   - **Voice Interaction**:
+     - Select your preferred language from the dropdown (English, Tiếng Việt, French, Spanish)
+     - Click the microphone button to start voice input
+     - Say your question in the selected language
+     - Use voice commands to send messages: "send", "gửi đi", "envoyer", "enviar"
+     - Click the speaker (🔊) button next to any AI response to hear it spoken aloud
+     - Use the stop (⏹️) button to pause speech playback
    - Ask questions and receive answers with detailed source references
    - View document titles, page numbers, and file paths for each answer
 
 ## Advanced Features
 
-### Source References
+### 📖 Source References
 Every AI response includes detailed source information:
 - **Document Title**: Original document name or extracted title
 - **File Path**: Location of the source document
@@ -102,11 +126,32 @@ Every AI response includes detailed source information:
 - **File Type**: Document format indicator
 - **Web Links**: Clickable links for web-based sources
 
-### Configurable RAG Pipeline
+### 🎯 Configurable RAG Pipeline
 - **Embedding Models**: Choose between OpenAI and Cohere embeddings
 - **Re-ranking**: Improve relevance with Cohere Rerank or LLM-based re-ranking
 - **Context Compression**: Automatically compress large contexts for optimal performance
 - **Chunk Control**: Fine-tune retrieval with configurable chunk counts
+
+### 🎵 Voice & Audio Features
+- **Speech Recognition**: Browser-based voice input using Web Speech API
+  - Supports English, Vietnamese, French, and Spanish
+  - Real-time language switching via dropdown selection
+  - Voice status feedback with interim results display
+- **Text-to-Speech**: Natural voice synthesis for AI responses
+  - Automatic language detection for appropriate voice selection
+  - Individual playback controls for each message
+  - Pause/stop functionality during speech
+- **Voice Commands**: Hands-free message sending
+  - English: "send", "send it"
+  - Vietnamese: "gửi", "gửi đi", "gui", "gui di"
+  - French: "envoyer", "envoi"
+  - Spanish: "enviar", "envía"
+
+### 🌍 Multi-Language Support
+- **Interface Languages**: Full support for multiple languages
+- **Voice Recognition**: Language-specific speech recognition
+- **Smart Detection**: Automatic language detection for text-to-speech
+- **Consistent Experience**: Unified interface across all supported languages
 
 ## Development
 
@@ -132,8 +177,47 @@ Key Python packages:
 - Python 3.8+
 - OpenAI API key (required)
 - Cohere API key (optional, for enhanced re-ranking)
-- Modern web browser
+- **Modern web browser** with Web Speech API support:
+  - Chrome 25+ (recommended for best voice support)
+  - Firefox 44+
+  - Safari 14.1+
+  - Edge 79+
+- **Microphone access** for voice input functionality
+- **Audio output** for text-to-speech playback
 - Windows/macOS/Linux support
+
+### Browser Compatibility Notes
+- **Voice Recognition**: Requires HTTPS in production or localhost for development
+- **Text-to-Speech**: Supported in all modern browsers
+- **Language Support**: Voice quality may vary by browser and operating system
+- **Permissions**: Browser will request microphone access on first voice input attempt
+
+## 🎤 Voice Features Guide
+
+### Getting Started with Voice
+1. **Enable Microphone**: Grant microphone permission when prompted
+2. **Select Language**: Choose your preferred language from the dropdown
+3. **Start Speaking**: Click the microphone button and speak your question
+4. **Voice Commands**: Say send commands in your language to auto-submit messages
+5. **Listen to Responses**: Click the speaker icon (🔊) next to any AI response
+
+### Voice Tips & Best Practices
+- **Clear Speech**: Speak clearly and at a moderate pace for best recognition
+- **Quiet Environment**: Use in a quiet environment for optimal voice recognition
+- **Language Consistency**: Select the language you plan to speak before starting
+- **Voice Commands**: Remember the send commands:
+  - 🇺🇸 English: "send" or "send it"
+  - 🇻🇳 Vietnamese: "gửi đi" or "gửi"
+  - 🇫🇷 French: "envoyer" or "envoi"
+  - 🇪🇸 Spanish: "enviar" or "envía"
+- **Audio Playback**: Use headphones to prevent audio feedback during voice input
+
+### Troubleshooting Voice Issues
+- **No Microphone Access**: Check browser permissions and system microphone settings
+- **Poor Recognition**: Try speaking more clearly or switching to a quieter environment
+- **Wrong Language**: Ensure the correct language is selected in the dropdown
+- **No Audio Playback**: Check system volume and browser audio permissions
+- **Voice Commands Not Working**: Make sure to say the exact command words listed above
 
 ## How to run:
 ```bash
@@ -144,4 +228,5 @@ python backend/app.py
 uvicorn backend.app:app --reload --port 8000
 
 # Then open http://localhost:8000 in your browser
+# Grant microphone permissions for voice features
 ```
